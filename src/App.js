@@ -1,17 +1,59 @@
-import React from "react";
+import React, { lazy, Suspense } from "react";
 import "./App.css";
 import Button from "./Button";
 import base from "./base";
 import buttons from "./buttons";
+import BtnContainer from "./BtnContainer";
 
 class App extends React.Component {
   state = {
-    buttons: {},
+    buttons: buttons,
   };
 
+  /* componentDidMount() {
+    window.addEventListener(
+      "beforeunload",
+      (this.ref = base.syncState(`${this.props.match.params.nameId}`, {
+        context: this,
+        state: "buttons",
+      }))
+    );
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener("beforeunload", base.removeBinding(this.ref));
+  } */
+
+  saveStateToLocalStorage() {
+    // for every item in React state
+    for (let key in this.state) {
+      // save to localStorage
+      localStorage.setItem(key, JSON.stringify(this.state[key]));
+    }
+  }
+
   componentDidMount() {
+    // add event listener to save state to localStorage
+    // when user leaves/refreshes the page
+    window.addEventListener(
+      "beforeunload",
+      this.saveStateToLocalStorage.bind(this)
+    );
+    const buttons = JSON.parse(localStorage.getItem("buttons"));
     this.setState({ buttons });
   }
+
+  componentWillUnmount() {
+    window.removeEventListener(
+      "beforeunload",
+      this.saveStateToLocalStorage.bind(this)
+    );
+    this.saveStateToLocalStorage();
+  }
+
+  /* componentWillUnmount() {
+    base.removeBinding(this.ref);
+  } */
 
   clickButton = (key) => {
     const buttons = { ...this.state.buttons };
@@ -20,31 +62,18 @@ class App extends React.Component {
   };
 
   render() {
-    var array = new Array(100);
-    for (var i = 1; i <= 100; i++) {
-      array.push(i);
-    }
-    //console.log(this.state.buttons[`button${100}`].condition);
-    const buttonLoop = array.map((number) => {
-      return (
-        <Button
-          key={number}
-          index={number}
-          addButton={this.addButton}
-          clickButton={this.clickButton}
-          condition={buttons[`button${number}`].condition}
-        ></Button>
-      );
-    });
     return (
-      <html>
+      <div>
         <header>
           <h1>100 Days to Habit</h1>
         </header>
-        <body>
-          <div className="button-container">{buttonLoop}</div>
-        </body>
-      </html>
+        <div>
+          <BtnContainer
+            clickButton={this.clickButton}
+            buttonState={this.state.buttons}
+          />
+        </div>
+      </div>
     );
   }
 }
